@@ -15,30 +15,30 @@ import (
 var Client *mongo.Client
 
 func Connect() {
-
-	if err := godotenv.Load(); err != nil {
-		log.Println("Note: No .env file found")
-	}
+	_ = godotenv.Load()
 
 	uri := os.Getenv("MONGO_URI")
 	if uri == "" {
-		log.Fatal("Error: 'MONGO_URI' variable is not set.")
+		uri = "mongodb://localhost:27017"
+		log.Println("Warning: MONGO_URI not set, defaulting to localhost")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	clientOptions := options.Client().ApplyURI(uri)
+
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Critical Error: Failed to create MongoDB client: %v", err)
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatal("Could not connect to MongoDB: ", err)
+		log.Fatalf("Critical Error: Could not ping MongoDB at %s: %v", uri, err)
 	}
 
-	fmt.Println("Connected to MongoDB successfully!")
+	fmt.Printf("Connected to MongoDB at %s successfully!\n", uri)
 	Client = client
 }
 
